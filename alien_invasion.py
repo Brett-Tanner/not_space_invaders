@@ -9,6 +9,7 @@ from bullet import Bullet
 from alien import Alien
 from game_stats import GameStats
 from button import Button
+from scoreboard import Scoreboard
 
 class AlienInvasion:
     def __init__(self):
@@ -26,6 +27,7 @@ class AlienInvasion:
         self.stats = GameStats(self)
         self.game_active = False
         self._create_fleet()
+        self.scoreboard = Scoreboard(self)
         self.play_button = Button(self, "Play")
 
     def run_game(self):
@@ -86,6 +88,9 @@ class AlienInvasion:
         button_clicked = self.play_button.rect.collidepoint(mouse_pos)
         if button_clicked and not self.game_active:
             self.stats.reset_stats()
+            self.scoreboard.prep_score()
+            self.scoreboard.prep_level()
+            self.scoreboard.prep_ships()
             self.bullets.empty()
             self.aliens.empty()
             self._create_fleet()
@@ -116,12 +121,20 @@ class AlienInvasion:
 
 
     def _check_bullet_alien_collisions(self):
-        pygame.sprite.groupcollide(
+        collisions = pygame.sprite.groupcollide(
                 self.bullets, self.aliens,
                 True, True)
+        if collisions:
+            for aliens in collisions.values():
+                self.stats.score += self.settings.alien_points * len(aliens)
+            self.scoreboard.prep_score()
+            self.scoreboard.check_high_score()
         if not self.aliens:
             self.bullets.empty()
             self.settings.increase_speed()
+            self.stats.level += 1
+            self.scoreboard.prep_level()
+
             self._create_fleet()
 
     def _update_aliens(self):
@@ -133,6 +146,7 @@ class AlienInvasion:
     def _ship_hit(self):
         if self.settings.ships_left > 0:
             self.settings.ships_left -= 1
+            self.scoreboard.prep_ships()
         else:
             self.game_active = False
 
@@ -164,6 +178,7 @@ class AlienInvasion:
             bullet.draw_bullet()
         self.aliens.draw(self.screen)
         self.ship.blitme()
+        self.scoreboard.show_score()
         if not self.game_active:
             self.play_button.draw_button()
         pygame.display.flip()

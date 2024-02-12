@@ -1,7 +1,9 @@
 import pygame # type: ignore
+from pygame.sprite import Sprite
 
-class Ship:
+class Ship(Sprite):
     def __init__(self, game):
+        super().__init__()
         self.image = pygame.image.load('images/ship.bmp')
 
         self.settings = game.settings
